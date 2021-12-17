@@ -1,43 +1,30 @@
-# https://www.howtoforge.com/tutorial/how-to-create-docker-images-with-dockerfile-18-04/
-
-# tensorflow cpu docker [https://github.com/tensorflow/tensorflow/blob/master/tensorflow/tools/dockerfiles/dockerfiles/cpu.Dockerfile]
-
-#setting user as non-root: 
-#https://code.visualstudio.com/remote/advancedcontainers/add-nonroot-user
-
-# RUN instruction Dockerfile for Docker Quick Start
-# to run:
-# docker build -t drone_custon_training:1.0 -f "dockerfile" .
-# docker run --rm -it drone_custom_training:1.0
+# Ubuntu as our base OS
 ARG UBUNTU_VERSION=18.04
 
-
-
 FROM ubuntu:${UBUNTU_VERSION} as base
+
+# LABEL about the custom image
+LABEL maintainer="gno320@gmail.com"
+LABEL version="0.1"
+LABEL description="This is custom Docker Image for \
+running gym-pybullet-drones env on Windows."
+
+# Disable Prompt During Packages Installation
+ARG DEBIAN_FRONTEND=noninteractive
+
 # For creating non-root users
 ARG USERNAME=dev
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-# Disable Prompt During Packages Installation
-ARG DEBIAN_FRONTEND=noninteractive
 
 # Create the user
 RUN groupadd --gid $USER_GID $USERNAME \
-&& useradd --uid $USER_UID --gid $USER_GID --create-home --shell /bin/bash $USERNAME \
-    #
-    # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
+    && useradd --uid $USER_UID --gid $USER_GID --create-home --shell /bin/bash $USERNAME \
+    # gives the user ability to install software
     && apt-get update \
     && apt-get install -y sudo \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
-
-# Add a fun prompt for dev user of my-app
-# whale: "\xF0\x9F\x90\xB3"
-# alien:"\xF0\x9F\x91\xBD"
-# fish:"\xF0\x9F\x90\xA0"
-# elephant:"\xF0\x9F\x91\xBD"
-# moneybag:"\xF0\x9F\x92\xB0"
-# RUN echo 'PS1="\[$(tput bold)$(tput setaf 4)\]my-app $(echo -e "\xF0\x9F\x90\xB3") \[$(tput sgr0)\] [\\u@\\h]:\\W \\$ "' 
 
 # Custom bash prompt via kirsle.net/wizards/ps1.html
 # https://ss64.com/bash/syntax-prompt.html
@@ -60,9 +47,9 @@ RUN apt-get update -y && \
     rm -rf /var/lib/apt/lists/* && \
     apt clean
 
+# additional dependencies
 RUN apt-get update -y && \
     apt-get install --no-install-recommends -y \
-    git \
     python3-pip \
     python3-setuptools \
     build-essential \
@@ -74,7 +61,7 @@ RUN apt-get update -y && \
 # # Some TF tools expect a "python" binary
 RUN ln -s $(which python3.8) /usr/local/bin/python
 
-# pip stuff
+# Install dependencies for the environment
 RUN python -m pip install --upgrade pip && \
     python -m pip --no-cache-dir install --upgrade \
     "pip<20.3" \
@@ -89,9 +76,7 @@ RUN python -m pip install --upgrade pip && \
     stable_baselines3 \
     'ray[rllib]'
     
-COPY bashrc /etc/bash.bashrc
-RUN chmod a+rwx /etc/bash.bashrc
-
+COPY 
 RUN git clone https://github.com/utiasDSL/gym-pybullet-drones.git && \
     cd gym-pybullet-drones/ && \
     python -m pip install -e .
