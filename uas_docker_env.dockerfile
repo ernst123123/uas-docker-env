@@ -16,6 +16,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG USERNAME=dev
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
+ARG DEV_WORKSPACE=/home/$USERNAME/workspace
 
 # Create the user
 RUN groupadd --gid $USER_GID $USERNAME \
@@ -76,12 +77,14 @@ RUN python -m pip install --upgrade pip && \
     stable_baselines3 \
     'ray[rllib]'
     
-COPY 
-RUN git clone https://github.com/utiasDSL/gym-pybullet-drones.git && \
-    cd gym-pybullet-drones/ && \
+WORKDIR ${DEV_WORKSPACE}
+COPY gym-pybullet-drones ${DEV_WORKSPACE}/
+RUN cd ${DEV_WORKSPACE}/gym-pybullet-drones && \
     python -m pip install -e .
 
 # [Optional] Set the default user. Omit if you want to keep the default as root.
 USER $USERNAME
 
-CMD ["/bin/bash"]
+COPY ./entrypoint.sh /
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
