@@ -78,14 +78,13 @@ RUN python -m pip install --upgrade pip && \
     'ray[rllib]'
     
 # WORKDIR ${DEV_WORKSPACE}/
-COPY gym-pybullet-drones ${DEV_WORKSPACE}/gym-pybullet-drones
+COPY --chown=${USERNAME}:${USERNAME} gym-pybullet-drones ${DEV_WORKSPACE}/gym-pybullet-drones
 RUN cd ${DEV_WORKSPACE}/gym-pybullet-drones && \
     python -m pip install -e .
 
 # [Optional] Set the default user. Omit if you want to keep the default as root.
 USER $USERNAME
 
-RUN pwd
 COPY docker/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
 
