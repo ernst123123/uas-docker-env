@@ -27,6 +27,8 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
     && chmod 0440 /etc/sudoers.d/$USERNAME
 
+
+
 # Custom bash prompt via kirsle.net/wizards/ps1.html
 # https://ss64.com/bash/syntax-prompt.html
 RUN echo 'PS1="[$(echo -e "\xF0\x9F\x92\xB0")\[$(tput setaf 1)\]\u\[$(tput setaf 3)\]@\[$(tput setaf 2)\]\h\[$(tput sgr0)\]:\[$(tput setaf 6)\]\w\[$(tput setaf 3)\]$(git branch 2> /dev/null | sed -e "/^[^*]/d" -e "s/* \(.*\)/(\1)/")\[$(tput sgr0)\]]\\$ \[$(tput sgr0)\]"' >> /home/$USERNAME/.bashrc && \
@@ -51,6 +53,7 @@ RUN apt-get update -y && \
 # additional dependencies
 RUN apt-get update -y && \
     apt-get install --no-install-recommends -y \
+    qt5-default \
     python3-pip \
     python3-setuptools \
     build-essential \
@@ -62,28 +65,28 @@ RUN apt-get update -y && \
 # # Some TF tools expect a "python" binary
 RUN ln -s $(which python3.8) /usr/local/bin/python
 
+# [Optional] Set the default user. Omit if you want to keep the default as root.
+USER $USERNAME
+
 # Install dependencies for the environment
 RUN python -m pip install --upgrade pip && \
     python -m pip --no-cache-dir install --upgrade \
-    "pip<20.3" \
     setuptools \
     numpy \
     Pillow \
     matplotlib \
     cycler \
     tensorflow==2.6 \
-    gym \
+    "gym<0.20,>=0.17" \
     pybullet \
     stable_baselines3 \
-    'ray[rllib]'
+    'ray[rllib]' \
+    pyqt5
     
 # WORKDIR ${DEV_WORKSPACE}/
 COPY --chown=${USERNAME}:${USERNAME} gym-pybullet-drones ${DEV_WORKSPACE}/gym-pybullet-drones
 RUN cd ${DEV_WORKSPACE}/gym-pybullet-drones && \
     python -m pip install -e .
-
-# [Optional] Set the default user. Omit if you want to keep the default as root.
-USER $USERNAME
 
 COPY docker/entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
