@@ -58,7 +58,17 @@ RUN apt-get update -y && \
     python3-setuptools \
     build-essential \
     ffmpeg \
-    curl && \
+    curl \
+    x11-apps \
+    python3-opengl \
+    libx11-6 \
+    libxext6 \
+    libxtst6 \
+    libxrender1 \
+    libxi6 \
+    mesa-utils \
+    libglu1-mesa \
+    libgl1-mesa-glx && \
     rm -rf /var/lib/apt/lists/* && \
     apt clean
 
@@ -68,20 +78,23 @@ RUN ln -s $(which python3.8) /usr/local/bin/python
 # [Optional] Set the default user. Omit if you want to keep the default as root.
 USER $USERNAME
 
-# Install dependencies for the environment
-RUN python -m pip install --upgrade pip && \
+# First install other packages
+RUN python -m pip install --upgrade pip==21 && \
     python -m pip --no-cache-dir install --upgrade \
-    setuptools \
+    setuptools==65.5.0 \
     numpy \
     Pillow \
     matplotlib \
     cycler \
     tensorflow==2.6 \
-    "gym<0.20,>=0.17" \
     pybullet \
     stable_baselines3 \
     'ray[rllib]' \
     pyqt5
+
+# Then install Gym separately
+#RUN python -m pip --no-cache-dir install gym==0.18.3
+
     
 # WORKDIR ${DEV_WORKSPACE}/
 COPY --chown=${USERNAME}:${USERNAME} gym-pybullet-drones ${DEV_WORKSPACE}/gym-pybullet-drones
@@ -89,5 +102,12 @@ RUN cd ${DEV_WORKSPACE}/gym-pybullet-drones && \
     python -m pip install -e .
 
 COPY docker/entrypoint.sh /
+RUN sudo chmod +x /entrypoint.sh
+
 ENTRYPOINT ["/entrypoint.sh"]
+
+RUN python -mpip install numpy --upgrade
+RUN python -mpip install glibc --upgrade
+
+#CMD ["sh", "-c", "DISPLAY=:1 xvfb-run -s '-screen 0 1280x1024x24']
 
